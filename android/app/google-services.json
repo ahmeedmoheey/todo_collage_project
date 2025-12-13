@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "913037675440",
+    "project_id": "todo-collage-project",
+    "storage_bucket": "todo-collage-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:913037675440:android:c03ff136cc00966efe2475",
+        "android_client_info": {
+          "package_name": "com.example.todo_collage_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWPmeoYcSqlRW7_ElmNDRsP07ec7UwMLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

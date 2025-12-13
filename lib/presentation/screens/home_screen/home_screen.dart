@@ -75,6 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // access reading data from firestore
       tasksTabKey.currentState?.getTodosFromFireStore();
     },
-    child: Icon(Icons.abc),
+    child: Icon(Icons.add),
   );
 }
