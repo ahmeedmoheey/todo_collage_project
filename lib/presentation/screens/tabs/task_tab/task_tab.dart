@@ -15,16 +15,13 @@ class TasksTab extends StatefulWidget {
 }
 
 class TasksTabState extends State<TasksTab> {
-  DateTime calenderSelectedDate = DateTime.now(); //
+  DateTime calenderSelectedDate = DateUtils.dateOnly(DateTime.now());
   List<TodoDM> todosList = [];
-
-  /// empty state
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    getTodosFromFireStore(); //
+    getTodosFromFireStore();
   }
 
   @override
@@ -41,53 +38,45 @@ class TasksTabState extends State<TasksTab> {
           ],
         ),
         Expanded(
-            child: ListView.builder(
-              itemBuilder: (context, index) {
-                print(todosList.length);
-                return TaskItem(
-                  todo: todosList[index],
-                  onDeletedTask: () {
-                    getTodosFromFireStore();
-                  },
-                );
-              },
-              itemCount: todosList.length,
-            ))
+          child: ListView.builder(
+            itemCount: todosList.length,
+            itemBuilder: (context, index) {
+              return TaskItem(
+                todo: todosList[index],
+                onDeletedTask: () {
+                  getTodosFromFireStore();
+                },
+              );
+            },
+          ),
+        ),
       ],
     );
   }
 
   Widget buildCalender() {
-    "SELECT * FROM Customer";
     return EasyDateTimeLine(
-      initialDate: DateTime.now(),
+      initialDate: calenderSelectedDate,
       onDateChange: (selectedDate) {
-        //`selectedDate` the new date selected.
+        calenderSelectedDate = DateUtils.dateOnly(selectedDate);
+        getTodosFromFireStore();
       },
       headerProps: const EasyHeaderProps(
-
         monthPickerType: MonthPickerType.switcher,
         dateFormatter: DateFormatter.fullDateDMY(),
       ),
       dayProps: const EasyDayProps(
         inactiveDayStyle: DayStyle(
-          monthStrStyle: TextStyle(
-            color: Colors.black
-          ),
+          monthStrStyle: TextStyle(color: Colors.black),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(15))
-          )
-        ),
-        disabledDayStyle: DayStyle(
-          decoration: BoxDecoration(
-            color: Colors.black
-          )
+            borderRadius: BorderRadius.all(Radius.circular(15)),
+          ),
         ),
         dayStructure: DayStructure.dayStrDayNum,
         activeDayStyle: DayStyle(
           decoration: BoxDecoration(
-       borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -127,13 +116,14 @@ class TasksTabState extends State<TasksTab> {
     )
         .get();
 
-    todosList = snapshot.docs.map((doc) {
-      return TodoDM.fromFireStore(
+    todosList = snapshot.docs
+        .map(
+          (doc) => TodoDM.fromFireStore(
         doc.data() as Map<String, dynamic>,
-      );
-    }).toList();
+      ),
+    )
+        .toList();
 
     setState(() {});
   }
-
 }

@@ -13,7 +13,6 @@ class TaskItem extends StatelessWidget {
   TaskItem({super.key, required this.todo, required this.onDeletedTask});
 
   TodoDM todo;
-
   Function onDeletedTask;
 
   @override
@@ -33,8 +32,8 @@ class TaskItem extends StatelessWidget {
                   topLeft: Radius.circular(15),
                   bottomLeft: Radius.circular(15)),
               flex: 2,
-              onPressed: (context) {
-                deleteTodoFromFireStore(todo);
+              onPressed: (context) async {
+                await deleteTodoFromFireStore(todo);
                 onDeletedTask();
               },
               backgroundColor: Colors.red,
@@ -44,24 +43,37 @@ class TaskItem extends StatelessWidget {
             ),
           ],
         ),
-        endActionPane:
-        ActionPane(extentRatio: 0.3, motion: DrawerMotion(), children: [
-          SlidableAction(
-            borderRadius: BorderRadius.only(
-                topRight: Radius.circular(15),
-                bottomRight: Radius.circular(15)),
-            flex: 2,
-            onPressed: (context) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => TaskEdit()));
-            },
-            backgroundColor: ColorsManager.blue,
-            foregroundColor: Colors.white,
-            icon: Icons.edit,
-            label: AppLocalizations.of(context)!.edit,
-          ),
-        ]),
+        endActionPane: ActionPane(
+          extentRatio: 0.3,
+          motion: DrawerMotion(),
+          children: [
+            SlidableAction(
+              borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(15),
+                  bottomRight: Radius.circular(15)),
+              flex: 2,
+              onPressed: (context) async {
+                // فتح شاشة تعديل مع Task ID
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TaskEdit(taskId: todo.id),
+                  ),
+                );
+
+                // لو حصل تعديل بنجاح، نعمل refresh للقائمة
+                if (result == true) {
+                  onDeletedTask();
+                }
+              },
+              backgroundColor: ColorsManager.blue,
+              foregroundColor: Colors.white,
+              icon: Icons.edit,
+              label: AppLocalizations.of(context)!.edit,
+            ),
+          ],
+        ),
         child: Container(
-          //padding: EdgeInsets.all(18),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.onPrimary,
@@ -81,6 +93,7 @@ class TaskItem extends StatelessWidget {
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     todo.title,
@@ -97,18 +110,20 @@ class TaskItem extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: ColorsManager.blue,
-                      borderRadius: BorderRadius.circular(10)),
-                  child:InkWell(
-                    onTap: () {
-                    },
-                    child: const Icon(
-                      Icons.check,
-                      color: ColorsManager.white,
-                    ),
-                  ))
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                    color: ColorsManager.blue,
+                    borderRadius: BorderRadius.circular(10)),
+                child: InkWell(
+                  onTap: () {
+                    // ممكن تضيفي هنا لتغيير حالة "Done"
+                  },
+                  child: const Icon(
+                    Icons.check,
+                    color: ColorsManager.white,
+                  ),
+                ),
+              )
             ],
           ),
         ),
@@ -116,14 +131,12 @@ class TaskItem extends StatelessWidget {
     );
   }
 
-  void deleteTodoFromFireStore(TodoDM todo) async {
+  Future<void> deleteTodoFromFireStore(TodoDM todo) async {
     CollectionReference todoCollection = FirebaseFirestore.instance
         .collection(UserDM.collectionName)
         .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName); // todo
+        .collection(TodoDM.collectionName);
     DocumentReference todoDoc = todoCollection.doc(todo.id);
     await todoDoc.delete();
   }
-
-
 }

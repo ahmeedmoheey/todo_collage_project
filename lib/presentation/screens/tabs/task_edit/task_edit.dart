@@ -21,10 +21,12 @@ class TaskEdit extends StatefulWidget {
 }
 
 class _TaskEditState extends State<TaskEdit> {
-  DateTime selectedDate = DateTime.now();
+  DateTime selectedDate = DateUtils.dateOnly(DateTime.now());
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   GlobalKey<FormState> formKey = GlobalKey();
+
+  bool isDone = false;
 
   @override
   void initState() {
@@ -43,12 +45,14 @@ class _TaskEditState extends State<TaskEdit> {
         .get();
 
     if (doc.exists) {
-      Map<String, dynamic>? data = doc.data() as Map<String, dynamic>;
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
       TodoDM todo = TodoDM.fromFireStore(data);
+
       setState(() {
         titleController.text = todo.title;
         descriptionController.text = todo.description;
-        selectedDate = todo.dateTime;
+        selectedDate = DateUtils.dateOnly(todo.dateTime);
+        isDone = todo.isDone;
       });
     }
   }
@@ -68,134 +72,117 @@ class _TaskEditState extends State<TaskEdit> {
       ),
       body: Form(
         key: formKey,
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  color: ColorsManager.blue,
-                  height: 90.h,
-                ),
-                const SizedBox(height: 40),
-                Container(
-                  padding: const EdgeInsets.all(25),
-                  alignment: Alignment.topCenter,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    color: ColorsManager.blue,
+                    height: 90.h,
                   ),
-                  margin: const EdgeInsets.all(29),
-                  width: 352,
-                  height: 617,
-                  child: Column(
-                    children: [
-                      Text(
-                        widget.taskId == null ? AppLocalizations.of(context)!.addTask : AppLocalizations.of(context)!.edit,
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      TextFormField(
-                        controller: titleController,
-                        validator: (input) {
-                          if (input == null || input.trim().isEmpty) {
-                            return AppLocalizations.of(context)!.plzEnterTaskTitle;
-                          }
-                          if (input.length < 4) {
-                            return 'Title should be at least 4 characters';
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.enterTaskTitle,
-                          hintStyle: GoogleFonts.inter(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: descriptionController,
-                        validator: (input) {
-                          if (input == null || input.trim().isEmpty) {
-                            return AppLocalizations.of(context)!.plzEnterYourDescription;
-                          }
-                          if (input.length < 6) {
-                            return AppLocalizations.of(context)!.sorryDescription;
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.enterDescriptionTask,
-                          hintStyle: GoogleFonts.inter(
-                            fontWeight: FontWeight.w400,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Text(
-                        AppLocalizations.of(context)!.selectDate,
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0XFF383838),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      InkWell(
-                        onTap: () {
-                          showTaskDate(context);
-                        },
-                        child: Text(
-                          selectedDate.toFormattedDate,
-                          style: const TextStyle(
-                            fontSize: 16,
+                  Container(
+                    padding: const EdgeInsets.all(25),
+                    margin: const EdgeInsets.all(29),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          widget.taskId == null
+                              ? AppLocalizations.of(context)!.addTask
+                              : AppLocalizations.of(context)!.edit,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFFA9A9A99C),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 30),
-                      ElevatedButton(
-                        style: ButtonStyle(
-                          shape: MaterialStatePropertyAll(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: titleController,
+                          validator: (input) {
+                            if (input == null || input.trim().isEmpty) {
+                              return AppLocalizations.of(context)!
+                                  .plzEnterTaskTitle;
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context)!
+                                .enterTaskTitle,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: descriptionController,
+                          validator: (input) {
+                            if (input == null || input.trim().isEmpty) {
+                              return AppLocalizations.of(context)!
+                                  .plzEnterYourDescription;
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context)!
+                                .enterDescriptionTask,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        Text(
+                          AppLocalizations.of(context)!.selectDate,
+                          style: GoogleFonts.inter(fontSize: 18),
+                        ),
+                        const SizedBox(height: 10),
+                        InkWell(
+                          onTap: () => showTaskDate(context),
+                          child: Text(
+                            selectedDate.toFormattedDate,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFA9A9A9),
                             ),
                           ),
                         ),
-                        onPressed: () {
-                          if (widget.taskId == null) {
-                            addTaskToFirestore();
-                          } else {
-                            updateTaskInFirestore(widget.taskId!);
-                            ();
-                          }
-                        },
-                        child:  Text(AppLocalizations.of(context)!.saveChanges),
-                      ),
-                    ],
+                        const SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (widget.taskId == null) {
+                              addTaskToFirestore();
+                            } else {
+                              updateTaskInFirestore(widget.taskId!);
+                            }
+                          },
+                          child:
+                          Text(AppLocalizations.of(context)!.saveChanges),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void showTaskDate(BuildContext context) async {
-    selectedDate = await showDatePicker(
+    DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-    ) ??
-        selectedDate;
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        selectedDate = DateUtils.dateOnly(pickedDate);
+      });
+    }
   }
 
   void addTaskToFirestore() {
@@ -211,48 +198,30 @@ class _TaskEditState extends State<TaskEdit> {
       id: documentReference.id,
       title: titleController.text,
       description: descriptionController.text,
-      dateTime: selectedDate.copyWith(
-        second: 0,
-        millisecond: 0,
-        minute: 0,
-        microsecond: 0,
-        hour: 0,
-      ),
+      dateTime: selectedDate,
       isDone: false,
     );
 
     documentReference
         .set(todo.toFireStore())
-        .then((_) => Navigator.pop(context))
-        .catchError((error) => print('Failed to add task: $error'));
+        .then((_) => Navigator.pop(context));
   }
 
-  void updateTaskInFirestore(String taskId) {
+  void updateTaskInFirestore(String taskId) async {
     if (!formKey.currentState!.validate()) return;
 
-    DocumentReference documentReference = FirebaseFirestore.instance
+    await FirebaseFirestore.instance
         .collection(UserDM.collectionName)
         .doc(UserDM.currentUser!.id)
         .collection(TodoDM.collectionName)
-        .doc(taskId);
+        .doc(taskId)
+        .update({
+      'title': titleController.text,
+      'description': descriptionController.text,
+      'dateTime': Timestamp.fromDate(selectedDate),
+      'isDone': isDone,
+    });
 
-    TodoDM todo = TodoDM(
-      id: taskId,
-      title: titleController.text,
-      description: descriptionController.text,
-      dateTime: selectedDate.copyWith(
-        second: 0,
-        millisecond: 0,
-        minute: 0,
-        microsecond: 0,
-        hour: 0,
-      ),
-      isDone: false,
-    );
-
-    documentReference
-        .update(todo.toFireStore())
-        .then((_) => Navigator.pop(context))
-        .catchError((error) => print('Failed to update task: $error'));
+    Navigator.pop(context);
   }
 }
