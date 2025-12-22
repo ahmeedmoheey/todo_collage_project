@@ -1,173 +1,103 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:todo_collage_project/core/utils/date_utils.dart';
-import '../../../core/utils/my_text_style.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../data_base_manager/todo_dm.dart';
-import '../../../data_base_manager/user_DM.dart';
-
-import '../../../l10n/app_localizations.dart';
 
 class AddTaskBottomSheet extends StatefulWidget {
-  const AddTaskBottomSheet({super.key});
+  final VoidCallback? onTaskAdded;
 
-  @override
-  State<AddTaskBottomSheet> createState() => _AddTaskBottomSheetState();
-  static Future show(context) {
+  const AddTaskBottomSheet({super.key, this.onTaskAdded});
+
+  static Future show(BuildContext context, {VoidCallback? onTaskAdded}) {
     return showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (context) {
-          return Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: AddTaskBottomSheet(),
-          );
-        });
-  }
-}
-
-class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
-
-  DateTime selectedDate = DateTime.now();
-  TextEditingController titleController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  GlobalKey<FormState> formKey = GlobalKey();
-
-  List<int> arr = [];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(12),
-      height: MediaQuery.of(context).size.height * .5,
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              AppLocalizations.of(context)!.addNewTask ,
-              textAlign: TextAlign.center,
-              style: MyTextStyle.bottomSheetTitle,
-            ),
-            const SizedBox(
-              height: 8,
-            ),
-            TextFormField(
-              validator: (input) {
-                if (input == null || input.trim().isEmpty) {
-                  return AppLocalizations.of(context)!.plzEnterTaskTitle;
-                }
-                return null;
-              },
-              controller: titleController,
-              decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.enterTaskTitle,
-                  hintStyle: MyTextStyle.hint),
-            ),
-            const SizedBox(
-              height: 8,
-            ),
-            TextFormField(
-              validator: (input) {
-                if (input == null || input.trim().isEmpty) {
-                  return AppLocalizations.of(context)!.plzEnterYourDescription;
-                }
-                if (input.length < 6) {
-                  return AppLocalizations.of(context)!.sorryDescription;
-                }
-                return null;
-              },
-              controller: descriptionController,
-              decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context)!.enterDescriptionTask,
-                  hintStyle: MyTextStyle.hint),
-            ),
-            const SizedBox(
-              height: 8,
-            ),
-            Text(
-              AppLocalizations.of(context)!.selectDate,
-              style: MyTextStyle.date,
-            ),
-            InkWell(
-                onTap: () {
-                  showTaskDate(context);
-                },
-                child: Text(
-                  selectedDate.toFormattedDate,
-                  textAlign: TextAlign.center,
-                  style: MyTextStyle.hint,
-                )),
-            const Spacer(),
-            ElevatedButton(
-                onPressed: () {
-                  addTaskToFireStore();
-                },
-                child:  Text(AppLocalizations.of(context)!.addTask,style: TextStyle(
-                    color: Colors.white
-                ),))
-          ],
-        ),
+      isScrollControlled: true,
+      context: context,
+      builder: (context) => Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: AddTaskBottomSheet(onTaskAdded: onTaskAdded),
       ),
     );
   }
 
-  void showTaskDate(context) async {
-    selectedDate = await showDatePicker(
-      context: context,
-      firstDate: DateTime.now(),
-      initialDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(
-        days: 365,
-      )),
-    ) ??
-        selectedDate;
+  @override
+  State<AddTaskBottomSheet> createState() => _AddTaskBottomSheetState();
+}
 
-    setState(() {});
+class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
+  DateTime selectedDate = DateTime.now();
+  TextEditingController titleController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      height: MediaQuery.of(context).size.height * 0.4,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Add Task',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: titleController,
+            decoration: const InputDecoration(hintText: 'Task title'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: descriptionController,
+            decoration: const InputDecoration(hintText: 'Task description'),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () async {
+              DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+              );
+              if (picked != null) setState(() => selectedDate = picked);
+            },
+            child: Text(
+              selectedDate.toFormattedDate,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const Spacer(),
+          ElevatedButton(
+            onPressed: addTaskToFirestore,
+            child: const Text('Add Task'),
+          ),
+        ],
+      ),
+    );
   }
 
-  void addTaskToFireStore() {
-    // form is valid
-    if (formKey.currentState!.validate() == false) return;
-    CollectionReference usersCollection =
-    FirebaseFirestore.instance.collection(UserDM.collectionName);
-    CollectionReference todoCollection = usersCollection
-        .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName);
-    DocumentReference documentReference = todoCollection.doc(); // auto id
+  void addTaskToFirestore() async {
+    CollectionReference todoCollection =
+    FirebaseFirestore.instance.collection(TodoDM.collectionName);
+
+    DocumentReference docRef = todoCollection.doc();
 
     TodoDM todo = TodoDM(
-        id: documentReference.id,
-        title: titleController.text,
-        description: descriptionController.text,
-        dateTime: selectedDate.copyWith(
-          second: 0,
-          millisecond: 0,
-          minute: 0,
-          microsecond: 0,
-          hour: 0,
-        ),
-        isDone: false);
-    documentReference
-        .set(todo.toFireStore())
-        .then(
-          (_) {
-        if (context.mounted) {
-          Navigator.pop(context);
-        }
-      },
-    )
-        .onError(
-          (error, stackTrace) {},
-    )
-        .timeout(
-      const Duration(seconds: 4),
-      onTimeout: () {
-        print(AppLocalizations.of(context)!.enterTimeOut);
-        if (context.mounted) {
-          Navigator.pop(context);
-        }
-      },
+      id: docRef.id,
+      title: titleController.text,
+      description: descriptionController.text,
+      dateTime: DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+      ),
+      isDone: false,
     );
+
+    await docRef.set(todo.toFireStore());
+
+    if (widget.onTaskAdded != null) widget.onTaskAdded!();
+    if (mounted) Navigator.pop(context);
   }
 }

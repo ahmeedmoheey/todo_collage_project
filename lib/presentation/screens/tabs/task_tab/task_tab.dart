@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/resuable_components/task_item.dart';
 import '../../../../core/utils/colors_manager.dart';
 import '../../../../data_base_manager/todo_dm.dart';
-import '../../../../data_base_manager/user_DM.dart';
 
 class TasksTab extends StatefulWidget {
   const TasksTab({super.key});
@@ -100,10 +99,9 @@ class TasksTabState extends State<TasksTab> {
 
     DateTime endOfDay = startOfDay.add(const Duration(days: 1));
 
-    CollectionReference todoCollection = FirebaseFirestore.instance
-        .collection(UserDM.collectionName)
-        .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName);
+    // استخدام collection مباشرة بدون user
+    CollectionReference todoCollection =
+    FirebaseFirestore.instance.collection(TodoDM.collectionName);
 
     QuerySnapshot snapshot = await todoCollection
         .where(

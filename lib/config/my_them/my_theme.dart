@@ -49,45 +49,4 @@ class MyTheme {
 
 
 
-  static ThemeData dark = ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-          seedColor: ColorsManager.darkBg,
-          primary: ColorsManager.darkBg,
-          onPrimary: ColorsManager.darkBg),
-      useMaterial3: false,
-      appBarTheme: AppBarTheme(
-          elevation: 0,
-          backgroundColor: ColorsManager.blue,
-          titleTextStyle: MyTextStyle.appBar),
-      scaffoldBackgroundColor: ColorsManager.darkBg,
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: ColorsManager.blue,
-        unselectedItemColor: ColorsManager.grey,
-        showSelectedLabels: true,
-        showUnselectedLabels: false,
-        selectedIconTheme: IconThemeData(size: 33),
-        unselectedIconTheme: IconThemeData(size: 33),
-      ),
-      bottomAppBarTheme: BottomAppBarThemeData(
-        shape: CircularNotchedRectangle()
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        shape: StadiumBorder(
-            side: BorderSide(color: ColorsManager.darkBg, width: 4)),
-        backgroundColor: ColorsManager.blue,
-        iconSize: 26,
-        foregroundColor: ColorsManager.white,
-      ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: ColorsManager.darkBg,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            )),
-      )
-  );
 }

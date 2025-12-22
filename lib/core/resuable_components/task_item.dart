@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../data_base_manager/todo_dm.dart';
-import '../../data_base_manager/user_DM.dart';
-import '../../l10n/app_localizations.dart';
 import '../../presentation/screens/tabs/task_edit/task_edit.dart';
 import '../utils/colors_manager.dart';
 import '../utils/my_text_style.dart';
@@ -12,23 +10,24 @@ import '../utils/my_text_style.dart';
 class TaskItem extends StatelessWidget {
   TaskItem({super.key, required this.todo, required this.onDeletedTask});
 
-  TodoDM todo;
-  Function onDeletedTask;
+  final TodoDM todo;
+  final VoidCallback onDeletedTask;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: REdgeInsets.all(8),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          color: Theme.of(context).colorScheme.onPrimary),
+        borderRadius: BorderRadius.circular(15),
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
       child: Slidable(
         startActionPane: ActionPane(
           extentRatio: .3,
-          motion: BehindMotion(),
+          motion: const BehindMotion(),
           children: [
             SlidableAction(
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(15),
                   bottomLeft: Radius.circular(15)),
               flex: 2,
@@ -39,21 +38,20 @@ class TaskItem extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               icon: Icons.delete,
-              label: AppLocalizations.of(context)!.delete,
+              label: "delete",
             ),
           ],
         ),
         endActionPane: ActionPane(
           extentRatio: 0.3,
-          motion: DrawerMotion(),
+          motion: const DrawerMotion(),
           children: [
             SlidableAction(
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(15),
                   bottomRight: Radius.circular(15)),
               flex: 2,
               onPressed: (context) async {
-                // فتح شاشة تعديل مع Task ID
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -61,7 +59,6 @@ class TaskItem extends StatelessWidget {
                   ),
                 );
 
-                // لو حصل تعديل بنجاح، نعمل refresh للقائمة
                 if (result == true) {
                   onDeletedTask();
                 }
@@ -69,15 +66,16 @@ class TaskItem extends StatelessWidget {
               backgroundColor: ColorsManager.blue,
               foregroundColor: Colors.white,
               icon: Icons.edit,
-              label: AppLocalizations.of(context)!.edit,
+              label: "edit",
             ),
           ],
         ),
         child: Container(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary,
-              borderRadius: BorderRadius.circular(15)),
+            color: Theme.of(context).colorScheme.onPrimary,
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: Row(
             children: [
               Container(
@@ -88,9 +86,7 @@ class TaskItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(
-                width: 7,
-              ),
+              const SizedBox(width: 7),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,9 +95,7 @@ class TaskItem extends StatelessWidget {
                     todo.title,
                     style: MyTextStyle.todoTitle,
                   ),
-                  SizedBox(
-                    height: 4,
-                  ),
+                  const SizedBox(height: 4),
                   Text(
                     todo.description,
                     style: MyTextStyle.todoDesc,
@@ -110,13 +104,15 @@ class TaskItem extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                    color: ColorsManager.blue,
-                    borderRadius: BorderRadius.circular(10)),
+                  color: ColorsManager.blue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: InkWell(
                   onTap: () {
-                    // ممكن تضيفي هنا لتغيير حالة "Done"
+                    // ممكن تضيف هنا لتغيير حالة "Done" لو تحب
                   },
                   child: const Icon(
                     Icons.check,
@@ -132,11 +128,9 @@ class TaskItem extends StatelessWidget {
   }
 
   Future<void> deleteTodoFromFireStore(TodoDM todo) async {
-    CollectionReference todoCollection = FirebaseFirestore.instance
-        .collection(UserDM.collectionName)
-        .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName);
-    DocumentReference todoDoc = todoCollection.doc(todo.id);
+    // حذف مباشر من collection 'todo' بدون مستخدم
+    DocumentReference todoDoc =
+    FirebaseFirestore.instance.collection(TodoDM.collectionName).doc(todo.id);
     await todoDoc.delete();
   }
 }

@@ -5,16 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:todo_collage_project/core/utils/date_utils.dart';
 import '../../../../core/utils/colors_manager.dart';
 import '../../../../data_base_manager/todo_dm.dart';
-import '../../../../data_base_manager/user_DM.dart';
-import '../../../../l10n/app_localizations.dart';
 
 class TaskEdit extends StatefulWidget {
   final String? taskId;
 
-  const TaskEdit({
-    Key? key,
-    this.taskId,
-  }) : super(key: key);
+  const TaskEdit({Key? key, this.taskId}) : super(key: key);
 
   @override
   State<TaskEdit> createState() => _TaskEditState();
@@ -25,7 +20,6 @@ class _TaskEditState extends State<TaskEdit> {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   GlobalKey<FormState> formKey = GlobalKey();
-
   bool isDone = false;
 
   @override
@@ -38,8 +32,6 @@ class _TaskEditState extends State<TaskEdit> {
 
   void _loadTaskData() async {
     DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection(UserDM.collectionName)
-        .doc(UserDM.currentUser!.id)
         .collection(TodoDM.collectionName)
         .doc(widget.taskId)
         .get();
@@ -47,6 +39,8 @@ class _TaskEditState extends State<TaskEdit> {
     if (doc.exists) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
       TodoDM todo = TodoDM.fromFireStore(data);
+
+      if (!mounted) return;
 
       setState(() {
         titleController.text = todo.title;
@@ -62,7 +56,7 @@ class _TaskEditState extends State<TaskEdit> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          AppLocalizations.of(context)!.todoList,
+          'ToDo List',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
             fontSize: 22,
@@ -91,9 +85,7 @@ class _TaskEditState extends State<TaskEdit> {
                     child: Column(
                       children: [
                         Text(
-                          widget.taskId == null
-                              ? AppLocalizations.of(context)!.addTask
-                              : AppLocalizations.of(context)!.edit,
+                          widget.taskId == null ? 'Add Task' : 'Edit Task',
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -104,34 +96,28 @@ class _TaskEditState extends State<TaskEdit> {
                           controller: titleController,
                           validator: (input) {
                             if (input == null || input.trim().isEmpty) {
-                              return AppLocalizations.of(context)!
-                                  .plzEnterTaskTitle;
+                              return 'Please enter task title';
                             }
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!
-                                .enterTaskTitle,
-                          ),
+                          decoration:
+                          const InputDecoration(hintText: 'Enter task title'),
                         ),
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: descriptionController,
                           validator: (input) {
                             if (input == null || input.trim().isEmpty) {
-                              return AppLocalizations.of(context)!
-                                  .plzEnterYourDescription;
+                              return 'Please enter task description';
                             }
                             return null;
                           },
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!
-                                .enterDescriptionTask,
-                          ),
+                          decoration: const InputDecoration(
+                              hintText: 'Enter task description'),
                         ),
                         const SizedBox(height: 30),
                         Text(
-                          AppLocalizations.of(context)!.selectDate,
+                          'Select Date',
                           style: GoogleFonts.inter(fontSize: 18),
                         ),
                         const SizedBox(height: 10),
@@ -155,8 +141,7 @@ class _TaskEditState extends State<TaskEdit> {
                               updateTaskInFirestore(widget.taskId!);
                             }
                           },
-                          child:
-                          Text(AppLocalizations.of(context)!.saveChanges),
+                          child: const Text('Save Changes'),
                         ),
                       ],
                     ),
@@ -178,50 +163,58 @@ class _TaskEditState extends State<TaskEdit> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (pickedDate != null) {
+    if (pickedDate != null && mounted) {
       setState(() {
         selectedDate = DateUtils.dateOnly(pickedDate);
       });
     }
   }
 
-  void addTaskToFirestore() {
+  void addTaskToFirestore() async {
     if (!formKey.currentState!.validate()) return;
 
-    DocumentReference documentReference = FirebaseFirestore.instance
-        .collection(UserDM.collectionName)
-        .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName)
-        .doc();
+    DocumentReference docRef =
+    FirebaseFirestore.instance.collection(TodoDM.collectionName).doc();
 
     TodoDM todo = TodoDM(
-      id: documentReference.id,
+      id: docRef.id,
       title: titleController.text,
       description: descriptionController.text,
       dateTime: selectedDate,
       isDone: false,
     );
 
-    documentReference
-        .set(todo.toFireStore())
-        .then((_) => Navigator.pop(context));
+    try {
+      await docRef.set(todo.toFireStore());
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 
   void updateTaskInFirestore(String taskId) async {
     if (!formKey.currentState!.validate()) return;
 
-    await FirebaseFirestore.instance
-        .collection(UserDM.collectionName)
-        .doc(UserDM.currentUser!.id)
-        .collection(TodoDM.collectionName)
-        .doc(taskId)
-        .update({
-      'title': titleController.text,
-      'description': descriptionController.text,
-      'dateTime': Timestamp.fromDate(selectedDate),
-      'isDone': isDone,
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection(TodoDM.collectionName)
+          .doc(taskId)
+          .update({
+        'title': titleController.text,
+        'description': descriptionController.text,
+        'dateTime': Timestamp.fromDate(selectedDate),
+        'isDone': isDone,
+      });
 
-    Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 }
